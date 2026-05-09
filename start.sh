@@ -5,27 +5,38 @@
 echo "🚀 代理商销售管理系统启动中..."
 echo "================================"
 
-# 检查是否在backend目录
-if [ ! -f "main.py" ]; then
-    echo "❌ 请在 agent-system/backend 目录下运行此脚本"
+# 确定项目根目录
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+# 检查是否在backend目录，如果在根目录则切换
+if [ -f "backend/main.py" ]; then
+    # 在根目录
+    BACKEND_DIR="$SCRIPT_DIR/backend"
+    FRONTEND_DIR="$SCRIPT_DIR/frontend"
+elif [ -f "main.py" ]; then
+    # 已在backend目录
+    BACKEND_DIR="$SCRIPT_DIR"
+    FRONTEND_DIR="$SCRIPT_DIR/../frontend"
+else
+    echo "❌ 请在 agent-system 目录下运行此脚本"
     exit 1
 fi
 
 # 检查并创建虚拟环境
-if [ ! -d "../venv" ]; then
+if [ ! -d "$SCRIPT_DIR/venv" ]; then
     echo "📦 正在创建虚拟环境..."
-    cd ..
     python3 -m venv venv
-    cd backend
 fi
 
-# 激活虚拟环境并安装依赖
+# 安装后端依赖
 echo "📦 安装后端依赖..."
-source ../venv/bin/activate
-pip install -q -r requirements.txt 2>/dev/null
+source "$SCRIPT_DIR/venv/bin/activate"
+pip install -q -r "$BACKEND_DIR/requirements.txt" 2>/dev/null
 
 # 启动后端
 echo "🚀 启动后端服务..."
+cd "$BACKEND_DIR"
 uvicorn main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 echo "✅ 后端已启动 (PID: $BACKEND_PID, http://localhost:8000)"
@@ -33,11 +44,10 @@ echo "✅ 后端已启动 (PID: $BACKEND_PID, http://localhost:8000)"
 # 等待后端启动
 sleep 3
 
-# 切换到前端目录
+# 启动前端
 echo "🎨 启动前端服务..."
-cd ../frontend
+cd "$FRONTEND_DIR"
 
-# 检查是否安装了依赖
 if [ ! -d "node_modules" ]; then
     echo "📦 正在安装前端依赖..."
     npm install
