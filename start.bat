@@ -13,15 +13,21 @@ if not exist main.py (
     exit /b 1
 )
 
-REM 检查虚拟环境
-if not exist "..\venv\Scripts\activate.bat" (
-    echo ❌ 未找到虚拟环境，请先创建: python -m venv ..\venv
-    pause
-    exit /b 1
+REM 检查并创建虚拟环境
+if not exist "..\venv" (
+    echo 📦 正在创建虚拟环境...
+    cd ..
+    python -m venv venv
+    cd backend
+    echo 📦 安装后端依赖...
+    call ..\venv\Scripts\pip install -q -r requirements.txt
+) else (
+    echo 📦 安装后端依赖...
+    call ..\venv\Scripts\pip install -q -r requirements.txt
 )
 
-echo 📦 启动后端服务...
-cd /d "%~dp0"
+REM 启动后端
+echo 🚀 启动后端服务...
 start "Backend" cmd /c "..\venv\Scripts\activate.bat && uvicorn main:app --host 0.0.0.0 --port 8000"
 echo ✅ 后端已启动 (http://localhost:8000)
 

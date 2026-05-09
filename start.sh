@@ -11,15 +11,21 @@ if [ ! -f "main.py" ]; then
     exit 1
 fi
 
-# 检查虚拟环境
+# 检查并创建虚拟环境
 if [ ! -d "../venv" ]; then
-    echo "❌ 未找到虚拟环境，请先创建: python3 -m venv venv"
-    exit 1
+    echo "📦 正在创建虚拟环境..."
+    cd ..
+    python3 -m venv venv
+    cd backend
 fi
 
-# 启动后端
-echo "📦 启动后端服务..."
+# 激活虚拟环境并安装依赖
+echo "📦 安装后端依赖..."
 source ../venv/bin/activate
+pip install -q -r requirements.txt 2>/dev/null
+
+# 启动后端
+echo "🚀 启动后端服务..."
 uvicorn main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 echo "✅ 后端已启动 (PID: $BACKEND_PID, http://localhost:8000)"
@@ -27,7 +33,7 @@ echo "✅ 后端已启动 (PID: $BACKEND_PID, http://localhost:8000)"
 # 等待后端启动
 sleep 3
 
-# 切换到前端目录启动
+# 切换到前端目录
 echo "🎨 启动前端服务..."
 cd ../frontend
 
