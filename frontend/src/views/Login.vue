@@ -43,6 +43,12 @@ const handleLogin = async () => {
     return
   }
 
+  // 清除旧数据
+  localStorage.removeItem('token')
+  localStorage.removeItem('username')
+  localStorage.removeItem('role')
+  localStorage.removeItem('userId')
+
   loading.value = true
   try {
     const response = await api.login({
