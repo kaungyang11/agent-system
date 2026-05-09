@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // 根据环境选择 API 地址
 const isProd = import.meta.env.PROD
-const API_BASE = isProd ? 'http://localhost:8000/api' : '/api'
+const API_BASE = isProd ? 'http://localhost:8000/api' : '/api/v1'
 
 const apiClient = axios.create({
   baseURL: API_BASE,
