@@ -63,10 +63,10 @@ const handleLogin = async () => {
 
     // 根据角色跳转到不同页面
     const rolePages = {
-      'admin': '/',
-      'sales': '/',
-      'agent': '/',
-      'customer': '/'
+      'admin': '/performance',      // 管理员 → 业绩管理
+      'sales': '/orders',           // 销售 → 订单管理
+      'agent': '/inventory',        // 代理商 → 库存管理
+      'customer': '/products'       // 客户 → 产品列表
     }
     router.push(rolePages[profile.role] || '/')
   } catch (error) {
