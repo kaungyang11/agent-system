@@ -23,16 +23,18 @@ else
     exit 1
 fi
 
-# 检查并创建虚拟环境
-if [ ! -d "$SCRIPT_DIR/venv" ]; then
-    echo "📦 正在创建虚拟环境..."
-    python3 -m venv venv
+# 检查并重新创建虚拟环境（修复依赖问题）
+echo "🔧 检查虚拟环境..."
+if [ ! -d "$SCRIPT_DIR/venv" ] || ! "$SCRIPT_DIR/venv/bin/python" -c "import passlib" 2>/dev/null; then
+    echo "📦 正在创建/修复虚拟环境..."
+    rm -rf "$SCRIPT_DIR/venv"
+    python3 -m venv "$SCRIPT_DIR/venv"
 fi
 
 # 安装后端依赖
 echo "📦 安装后端依赖..."
 source "$SCRIPT_DIR/venv/bin/activate"
-pip install -q -r "$BACKEND_DIR/requirements.txt" 2>/dev/null
+pip install -q -r "$BACKEND_DIR/requirements.txt"
 
 # 启动后端
 echo "🚀 启动后端服务..."
