@@ -1,0 +1,111 @@
+/* 全局样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* 布局样式 */
+.el-container {
+  min-height: 100vh;
+}
+
+.el-aside {
+  background-color: #304156;
+  color: #bfcbd9;
+}
+
+.el-header {
+  background-color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.el-main {
+  background-color: #f5f7fa;
+  padding: 20px;
+}
+
+/* 侧边栏菜单 */
+.sidebar-menu {
+  height: 100%;
+  border-right: none;
+}
+
+.sidebar-menu .el-menu-item:hover,
+.sidebar-menu .el-sub-menu__title:hover {
+  background-color: #263445;
+}
+
+.sidebar-menu .el-menu-item.is-active {
+  background-color: #409EFF;
+  color: #fff;
+}
+
+/* 表格样式 */
+.el-table {
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* 表单样式 */
+.el-form {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* 卡片样式 */
+.el-card {
+  margin-bottom: 20px;
+}
+
+/* 按钮样式 */
+.el-button {
+  margin: 5px;
+}
+
+/* 状态标签 */
+.status-tag {
+  margin-right: 5px;
+}
+
+/* 页面标题 */
+.page-header {
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+}
+
+/* 统计卡片 */
+.stat-card {
+  text-align: center;
+  padding: 20px;
+}
+
+.stat-card .stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #409EFF;
+}
+
+.stat-card .stat-label {
+  color: #909399;
+  margin-top: 10px;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .el-aside {
+    display: none;
+  }
+}

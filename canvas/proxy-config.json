@@ -1,0 +1,9 @@
+{
+  "name": "代理商销售系统代理",
+  "routes": {
+    "/api/": {
+      "target": "http://localhost:8000",
+      "changeOrigin": true
+    }
+  }
+}
