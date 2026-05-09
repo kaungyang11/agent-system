@@ -14,16 +14,32 @@ from app.routers.auth import get_current_user, get_password_hash
 router = APIRouter(prefix="/users", tags=["用户管理"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-@router.get("", response_model=List[UserResponse])
+@router.get("")
 async def list_users(
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """获取用户列表"""
+    """获取用户列表 - 仅管理员和销售可访问"""
+    # 权限控制：代理商和客户不能查看用户列表
+    if current_user.role in ['agent', 'customer']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    
     users = db.query(User).offset(skip).limit(limit).all()
-    return users
+    
+    # 返回简化数据（不包含密码）
+    result = []
+    for u in users:
+        result.append({
+            "id": u.id,
+            "username": u.username,
+            "role": u.role,
+            "real_name": u.real_name,
+            "phone": u.phone,
+            "created_at": u.created_at.strftime("%Y-%m-%d %H:%M:%S") if u.created_at else ""
+        })
+    return result
 
 @router.post("", response_model=UserResponse)
 async def create_user(

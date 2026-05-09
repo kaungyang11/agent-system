@@ -15,28 +15,56 @@ from app.routers.orders import calculate_reward
 
 router = APIRouter(prefix="/performance", tags=["业绩管理"])
 
-@router.get("", response_model=List[PerformanceResponse])
+@router.get("")
 async def list_performance(
     sales_id: int = None,
     agent_id: int = None,
-    status: str = None,
+    status_filter: str = None,
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """获取业绩记录列表"""
+    """获取业绩记录列表 - 按角色过滤"""
+    # 权限控制：客户不能查看业绩
+    if current_user.role == 'customer':
+        raise HTTPException(status_code=403, detail="权限不足")
+    
     query = db.query(Performance)
+    
+    # 销售只能看自己的业绩
+    if current_user.role == 'sales':
+        query = query.filter(Performance.sales_id == current_user.id)
+    
+    # 代理商只能看自己的业绩
+    if current_user.role == 'agent':
+        query = query.filter(Performance.agent_id == current_user.id)
     
     if sales_id:
         query = query.filter(Performance.sales_id == sales_id)
     if agent_id:
         query = query.filter(Performance.agent_id == agent_id)
-    if status:
-        query = query.filter(Performance.status == status)
+    if status_filter:
+        query = query.filter(Performance.status == status_filter)
     
     performance = query.offset(skip).limit(limit).all()
-    return performance
+    
+    # 返回简化数据
+    result = []
+    for p in performance:
+        result.append({
+            "id": p.id,
+            "order_id": p.order_id,
+            "sales_id": p.sales_id,
+            "agent_id": p.agent_id,
+            "customer_id": p.customer_id,
+            "quantity": p.quantity,
+            "reward_amount": p.reward_amount,
+            "status": p.status,
+            "created_at": p.created_at.strftime("%Y-%m-%d %H:%M:%S") if p.created_at else "",
+            "settled": bool(p.settled)
+        })
+    return result
 
 @router.post("", response_model=PerformanceResponse)
 async def create_performance(
@@ -93,7 +121,11 @@ async def approve_performance(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """审核业绩（通过/拒绝）"""
+    """审核业绩（通过/拒绝）- 管理员/销售可操作"""
+    # 验证权限：只有管理员和销售可以审核
+    if current_user.role not in ['admin', 'sales']:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足，无法审核业绩")
+    
     performance = db.query(Performance).filter(Performance.id == performance_id).first()
     if not performance:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="业绩记录不存在")
@@ -108,11 +140,19 @@ async def approve_performance(
     db.commit()
     db.refresh(performance)
     
+    # 获取代理商信息
+    agent = db.query(Agent).filter(Agent.id == performance.agent_id).first()
+    
     return {
         "message": message,
         "performance_id": performance.id,
+        "order_id": performance.order_id,
+        "agent_id": performance.agent_id,
+        "agent_name": agent.name if agent else "",
+        "reward_amount": performance.reward_amount,
+        "current_balance": agent.balance if agent else 0,
         "status": performance.status,
-        "reward_amount": performance.reward_amount
+        "after_settle_balance": (agent.balance + performance.reward_amount) if agent else 0
     }
 
 @router.put("/{performance_id}/reject")

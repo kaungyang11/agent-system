@@ -12,24 +12,30 @@ from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/agents", tags=["代理商管理"])
 
-@router.get("", response_model=List[AgentResponse])
+@router.get("")
 async def list_agents(
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """获取代理商列表"""
+    """获取代理商列表 - 客户不可访问"""
+    if current_user.role == 'customer':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    
     agents = db.query(Agent).offset(skip).limit(limit).all()
-    return agents
+    return [{"id": a.id, "name": a.name, "contact_person": a.contact_person, "phone": a.phone, "level": a.level, "balance": a.balance} for a in agents]
 
-@router.post("", response_model=AgentResponse)
+@router.post("")
 async def create_agent(
     agent_data: AgentCreate, 
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """创建代理商"""
+    """创建代理商 - 仅管理员"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅管理员可创建代理商")
+    
     new_agent = Agent(
         name=agent_data.name,
         contact_person=agent_data.contact_person,
@@ -41,9 +47,9 @@ async def create_agent(
     db.add(new_agent)
     db.commit()
     db.refresh(new_agent)
-    return new_agent
+    return {"id": new_agent.id, "name": new_agent.name, "balance": new_agent.balance}
 
-@router.get("/{agent_id}", response_model=AgentResponse)
+@router.get("/{agent_id}")
 async def get_agent(
     agent_id: int, 
     db: Session = Depends(get_db),
@@ -53,16 +59,24 @@ async def get_agent(
     agent = db.query(Agent).filter(Agent.id == agent_id).first()
     if not agent:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="代理商不存在")
-    return agent
+    
+    # 客户不能查看代理商详情
+    if current_user.role == 'customer':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    
+    return {"id": agent.id, "name": agent.name, "contact_person": agent.contact_person, "phone": agent.phone, "level": agent.level, "balance": agent.balance}
 
-@router.put("/{agent_id}", response_model=AgentResponse)
+@router.put("/{agent_id}")
 async def update_agent(
     agent_id: int, 
     agent_data: AgentUpdate, 
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """更新代理商信息"""
+    """更新代理商信息 - 仅管理员"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅管理员可修改代理商")
+    
     agent = db.query(Agent).filter(Agent.id == agent_id).first()
     if not agent:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="代理商不存在")
@@ -73,7 +87,7 @@ async def update_agent(
     
     db.commit()
     db.refresh(agent)
-    return agent
+    return {"id": agent.id, "name": agent.name, "balance": agent.balance}
 
 @router.get("/{agent_id}/balance")
 async def get_agent_balance(
@@ -82,6 +96,10 @@ async def get_agent_balance(
     current_user = Depends(get_current_user)
 ):
     """查询代理商余额"""
+    # 客户不能查看代理商余额
+    if current_user.role == 'customer':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    
     agent = db.query(Agent).filter(Agent.id == agent_id).first()
     if not agent:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="代理商不存在")
@@ -94,7 +112,10 @@ async def adjust_agent_balance(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """调整代理商余额"""
+    """调整代理商余额 - 仅管理员"""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅管理员可调整余额")
+    
     agent = db.query(Agent).filter(Agent.id == agent_id).first()
     if not agent:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="代理商不存在")
