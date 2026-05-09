@@ -16,7 +16,7 @@
           ¥{{ row.price?.toFixed(2) }}
         </template>
       </el-table-column>
-      <el-table-column prop="agent_balance" label="代理商余额" width="120">
+      <el-table-column v-if="canViewBalance" prop="agent_balance" label="代理商余额" width="120">
         <template #default="{ row }">
           <span :class="{ 'text-danger': row.agent_balance < 1000 }">
             ¥{{ row.agent_balance?.toFixed(2) }}
@@ -124,6 +124,10 @@ const form = ref({
   unit_price: 0,
   total_price: 0
 })
+
+// 根据角色判断是否显示代理商余额
+const userRole = computed(() => localStorage.getItem('role'))
+const canViewBalance = computed(() => ['admin', 'agent'].includes(userRole.value))
 
 const maxQuantity = computed(() => {
   if (!form.value.agent_id || !form.value.product_id) return 999
