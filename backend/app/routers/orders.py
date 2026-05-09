@@ -24,16 +24,38 @@ def calculate_reward(quantity: int, lp_price: float, pdc_price: float) -> float:
     """
     return quantity * (lp_price - 0.9 * pdc_price)
 
-@router.get("", response_model=List[OrderResponse])
+@router.get("")
 async def list_orders(
     skip: int = 0, 
     limit: int = 100, 
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """获取订单列表"""
+    """获取订单列表（包含客户和产品名称）"""
+    from app.models.customer import Customer
+    from app.models.product import Product
+    
     orders = db.query(Order).offset(skip).limit(limit).all()
-    return orders
+    
+    # 构建返回数据，包含名称
+    result = []
+    for order in orders:
+        customer = db.query(Customer).filter(Customer.id == order.customer_id).first()
+        product = db.query(Product).filter(Product.id == order.product_id).first()
+        result.append({
+            "id": order.id,
+            "order_no": f"ORD{order.id:06d}",
+            "customer_id": order.customer_id,
+            "customer_name": customer.name if customer else "",
+            "product_id": order.product_id,
+            "product_name": product.name if product else "",
+            "quantity": order.quantity,
+            "price": order.unit_price,
+            "status": order.status,
+            "created_at": order.created_at.strftime("%Y-%m-%d %H:%M:%S") if order.created_at else "",
+            "agent_id": order.agent_id,
+        })
+    return result
 
 @router.get("/agent/{agent_id}", response_model=List[OrderResponse])
 async def get_agent_orders(
@@ -47,7 +69,7 @@ async def get_agent_orders(
     orders = db.query(Order).filter(Order.agent_id == agent_id).offset(skip).limit(limit).all()
     return orders
 
-@router.post("", response_model=OrderResponse)
+@router.post("")
 async def create_order(
     order_data: OrderCreate, 
     db: Session = Depends(get_db),
@@ -56,6 +78,9 @@ async def create_order(
     """
     创建订单（客户下单，自动扣减库存）
     """
+    from app.models.customer import Customer
+    from app.models.product import Product
+    
     # 检查库存是否充足
     inventory = db.query(Inventory).filter(
         and_(
@@ -87,21 +112,54 @@ async def create_order(
     inventory.quantity -= order_data.quantity
     db.commit()
     
-    return new_order
+    # 返回创建的数据
+    customer = db.query(Customer).filter(Customer.id == order_data.customer_id).first()
+    product = db.query(Product).filter(Product.id == order_data.product_id).first()
+    return {
+        "id": new_order.id,
+        "order_no": f"ORD{new_order.id:06d}",
+        "customer_id": new_order.customer_id,
+        "customer_name": customer.name if customer else "",
+        "product_id": new_order.product_id,
+        "product_name": product.name if product else "",
+        "quantity": new_order.quantity,
+        "price": new_order.unit_price,
+        "status": new_order.status,
+        "created_at": new_order.created_at.strftime("%Y-%m-%d %H:%M:%S") if new_order.created_at else "",
+        "agent_id": new_order.agent_id,
+    }
 
-@router.get("/{order_id}", response_model=OrderResponse)
+@router.get("/{order_id}")
 async def get_order(
     order_id: int, 
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
     """获取订单详情"""
+    from app.models.customer import Customer
+    from app.models.product import Product
+    
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
-    return order
+    
+    customer = db.query(Customer).filter(Customer.id == order.customer_id).first()
+    product = db.query(Product).filter(Product.id == order.product_id).first()
+    return {
+        "id": order.id,
+        "order_no": f"ORD{order.id:06d}",
+        "customer_id": order.customer_id,
+        "customer_name": customer.name if customer else "",
+        "product_id": order.product_id,
+        "product_name": product.name if product else "",
+        "quantity": order.quantity,
+        "price": order.unit_price,
+        "status": order.status,
+        "created_at": order.created_at.strftime("%Y-%m-%d %H:%M:%S") if order.created_at else "",
+        "agent_id": order.agent_id,
+    }
 
-@router.put("/{order_id}/status", response_model=OrderResponse)
+@router.put("/{order_id}/status")
 async def update_order_status(
     order_id: int,
     status_data: OrderStatusUpdate,
@@ -109,6 +167,9 @@ async def update_order_status(
     current_user = Depends(get_current_user)
 ):
     """更新订单状态"""
+    from app.models.customer import Customer
+    from app.models.product import Product
+    
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="订单不存在")
@@ -135,5 +196,20 @@ async def update_order_status(
 
     order.status = status_data.status
     db.commit()
-    db.refresh(order)
-    return order
+    
+    # 返回更新后的数据
+    customer = db.query(Customer).filter(Customer.id == order.customer_id).first()
+    product = db.query(Product).filter(Product.id == order.product_id).first()
+    return {
+        "id": order.id,
+        "order_no": f"ORD{order.id:06d}",
+        "customer_id": order.customer_id,
+        "customer_name": customer.name if customer else "",
+        "product_id": order.product_id,
+        "product_name": product.name if product else "",
+        "quantity": order.quantity,
+        "price": order.unit_price,
+        "status": order.status,
+        "created_at": order.created_at.strftime("%Y-%m-%d %H:%M:%S") if order.created_at else "",
+        "agent_id": order.agent_id,
+    }
