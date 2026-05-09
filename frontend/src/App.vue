@@ -84,6 +84,9 @@ const activeMenu = computed(() => {
 
 const handleLogout = () => {
   localStorage.removeItem('token')
+  localStorage.removeItem('username')
+  localStorage.removeItem('role')
+  localStorage.removeItem('userId')
   router.push('/login')
 }
 </script>
