@@ -1,3 +1,4 @@
+from typing import List
 """
 订单管理路由
 """
@@ -23,7 +24,7 @@ def calculate_reward(quantity: int, lp_price: float, pdc_price: float) -> float:
     """
     return quantity * (lp_price - 0.9 * pdc_price)
 
-@router.get("", response_model=list[OrderResponse])
+@router.get("", response_model=List[OrderResponse])
 async def list_orders(
     skip: int = 0, 
     limit: int = 100, 
@@ -34,7 +35,7 @@ async def list_orders(
     orders = db.query(Order).offset(skip).limit(limit).all()
     return orders
 
-@router.get("/agent/{agent_id}", response_model=list[OrderResponse])
+@router.get("/agent/{agent_id}", response_model=List[OrderResponse])
 async def get_agent_orders(
     agent_id: int,
     skip: int = 0, 

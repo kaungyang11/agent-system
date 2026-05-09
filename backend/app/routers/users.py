@@ -1,3 +1,4 @@
+from typing import List
 """
 用户管理路由
 """
@@ -13,7 +14,7 @@ from app.routers.auth import get_current_user, get_password_hash
 router = APIRouter(prefix="/users", tags=["用户管理"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-@router.get("", response_model=list[UserResponse])
+@router.get("", response_model=List[UserResponse])
 async def list_users(
     skip: int = 0, 
     limit: int = 100, 

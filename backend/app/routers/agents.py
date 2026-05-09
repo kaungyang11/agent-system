@@ -1,3 +1,4 @@
+from typing import List
 """
 代理商政策路由
 """
@@ -11,7 +12,7 @@ from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/agents", tags=["代理商管理"])
 
-@router.get("", response_model=list[AgentResponse])
+@router.get("", response_model=List[AgentResponse])
 async def list_agents(
     skip: int = 0, 
     limit: int = 100, 

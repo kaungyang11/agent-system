@@ -1,3 +1,4 @@
+from typing import List
 """
 库存管理路由
 """
@@ -13,7 +14,7 @@ from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/inventory", tags=["库存管理"])
 
-@router.get("", response_model=list[InventoryResponse])
+@router.get("", response_model=List[InventoryResponse])
 async def list_inventory(
     agent_id: int = None,
     product_id: int = None,

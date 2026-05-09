@@ -1,3 +1,4 @@
+from typing import List
 """
 客户管理路由
 """
@@ -11,7 +12,7 @@ from app.routers.auth import get_current_user
 
 router = APIRouter(prefix="/customers", tags=["客户管理"])
 
-@router.get("", response_model=list[CustomerResponse])
+@router.get("", response_model=List[CustomerResponse])
 async def list_customers(
     agent_id: int = None,
     sales_id: int = None,

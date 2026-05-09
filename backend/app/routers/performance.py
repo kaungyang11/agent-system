@@ -1,3 +1,4 @@
+from typing import List
 """
 业绩管理路由
 """
@@ -14,7 +15,7 @@ from app.routers.orders import calculate_reward
 
 router = APIRouter(prefix="/performance", tags=["业绩管理"])
 
-@router.get("", response_model=list[PerformanceResponse])
+@router.get("", response_model=List[PerformanceResponse])
 async def list_performance(
     sales_id: int = None,
     agent_id: int = None,
