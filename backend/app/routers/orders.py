@@ -31,17 +31,28 @@ async def list_orders(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """获取订单列表（包含客户和产品名称）"""
+    """获取订单列表（包含客户、产品、代理商名称和库存余额）"""
     from app.models.customer import Customer
     from app.models.product import Product
+    from app.models.agent import Agent
     
     orders = db.query(Order).offset(skip).limit(limit).all()
     
-    # 构建返回数据，包含名称
+    # 构建返回数据，包含名称和库存
     result = []
     for order in orders:
         customer = db.query(Customer).filter(Customer.id == order.customer_id).first()
         product = db.query(Product).filter(Product.id == order.product_id).first()
+        agent = db.query(Agent).filter(Agent.id == order.agent_id).first()
+        
+        # 获取代理商库存
+        inventory = db.query(Inventory).filter(
+            and_(
+                Inventory.agent_id == order.agent_id,
+                Inventory.product_id == order.product_id
+            )
+        ).first()
+        
         result.append({
             "id": order.id,
             "order_no": f"ORD{order.id:06d}",
@@ -49,11 +60,14 @@ async def list_orders(
             "customer_name": customer.name if customer else "",
             "product_id": order.product_id,
             "product_name": product.name if product else "",
+            "agent_id": order.agent_id,
+            "agent_name": agent.name if agent else "",
+            "agent_balance": agent.balance if agent else 0,
+            "product_stock": inventory.quantity if inventory else 0,
             "quantity": order.quantity,
             "price": order.unit_price,
             "status": order.status,
             "created_at": order.created_at.strftime("%Y-%m-%d %H:%M:%S") if order.created_at else "",
-            "agent_id": order.agent_id,
         })
     return result
 
@@ -80,6 +94,7 @@ async def create_order(
     """
     from app.models.customer import Customer
     from app.models.product import Product
+    from app.models.agent import Agent
     
     # 检查库存是否充足
     inventory = db.query(Inventory).filter(
@@ -115,6 +130,8 @@ async def create_order(
     # 返回创建的数据
     customer = db.query(Customer).filter(Customer.id == order_data.customer_id).first()
     product = db.query(Product).filter(Product.id == order_data.product_id).first()
+    agent = db.query(Agent).filter(Agent.id == order_data.agent_id).first()
+    
     return {
         "id": new_order.id,
         "order_no": f"ORD{new_order.id:06d}",
@@ -122,11 +139,14 @@ async def create_order(
         "customer_name": customer.name if customer else "",
         "product_id": new_order.product_id,
         "product_name": product.name if product else "",
+        "agent_id": new_order.agent_id,
+        "agent_name": agent.name if agent else "",
+        "agent_balance": agent.balance if agent else 0,
+        "product_stock": inventory.quantity if inventory else 0,
         "quantity": new_order.quantity,
         "price": new_order.unit_price,
         "status": new_order.status,
         "created_at": new_order.created_at.strftime("%Y-%m-%d %H:%M:%S") if new_order.created_at else "",
-        "agent_id": new_order.agent_id,
     }
 
 @router.get("/{order_id}")
@@ -138,6 +158,7 @@ async def get_order(
     """获取订单详情"""
     from app.models.customer import Customer
     from app.models.product import Product
+    from app.models.agent import Agent
     
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -145,6 +166,15 @@ async def get_order(
     
     customer = db.query(Customer).filter(Customer.id == order.customer_id).first()
     product = db.query(Product).filter(Product.id == order.product_id).first()
+    agent = db.query(Agent).filter(Agent.id == order.agent_id).first()
+    
+    inventory = db.query(Inventory).filter(
+        and_(
+            Inventory.agent_id == order.agent_id,
+            Inventory.product_id == order.product_id
+        )
+    ).first()
+    
     return {
         "id": order.id,
         "order_no": f"ORD{order.id:06d}",
@@ -152,11 +182,14 @@ async def get_order(
         "customer_name": customer.name if customer else "",
         "product_id": order.product_id,
         "product_name": product.name if product else "",
+        "agent_id": order.agent_id,
+        "agent_name": agent.name if agent else "",
+        "agent_balance": agent.balance if agent else 0,
+        "product_stock": inventory.quantity if inventory else 0,
         "quantity": order.quantity,
         "price": order.unit_price,
         "status": order.status,
         "created_at": order.created_at.strftime("%Y-%m-%d %H:%M:%S") if order.created_at else "",
-        "agent_id": order.agent_id,
     }
 
 @router.put("/{order_id}/status")
@@ -169,6 +202,7 @@ async def update_order_status(
     """更新订单状态"""
     from app.models.customer import Customer
     from app.models.product import Product
+    from app.models.agent import Agent
     
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
@@ -200,6 +234,15 @@ async def update_order_status(
     # 返回更新后的数据
     customer = db.query(Customer).filter(Customer.id == order.customer_id).first()
     product = db.query(Product).filter(Product.id == order.product_id).first()
+    agent = db.query(Agent).filter(Agent.id == order.agent_id).first()
+    
+    inventory = db.query(Inventory).filter(
+        and_(
+            Inventory.agent_id == order.agent_id,
+            Inventory.product_id == order.product_id
+        )
+    ).first()
+    
     return {
         "id": order.id,
         "order_no": f"ORD{order.id:06d}",
@@ -207,9 +250,12 @@ async def update_order_status(
         "customer_name": customer.name if customer else "",
         "product_id": order.product_id,
         "product_name": product.name if product else "",
+        "agent_id": order.agent_id,
+        "agent_name": agent.name if agent else "",
+        "agent_balance": agent.balance if agent else 0,
+        "product_stock": inventory.quantity if inventory else 0,
         "quantity": order.quantity,
         "price": order.unit_price,
         "status": order.status,
         "created_at": order.created_at.strftime("%Y-%m-%d %H:%M:%S") if order.created_at else "",
-        "agent_id": order.agent_id,
     }
