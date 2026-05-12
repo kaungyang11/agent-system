@@ -95,7 +95,7 @@ async def register(request: RegisterRequest, db: Session = Depends(get_db)):
         hashed_password=hashed_password,
         real_name=request.real_name,
         phone=request.phone,
-        role="sales"
+        role=request.role if hasattr(request, 'role') and request.role else "sales"
     )
     db.add(new_user)
     db.commit()

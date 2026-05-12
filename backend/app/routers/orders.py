@@ -32,6 +32,9 @@ async def list_orders(
     current_user = Depends(get_current_user)
 ):
     """获取订单列表（包含客户、产品、代理商名称和库存余额）"""
+    # 权限控制：客户不能查看订单列表
+    if current_user.role == 'customer':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
     from app.models.customer import Customer
     from app.models.product import Product
     from app.models.agent import Agent

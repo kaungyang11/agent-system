@@ -24,6 +24,10 @@ async def list_inventory(
     current_user = Depends(get_current_user)
 ):
     """获取库存列表（可选按代理商/产品筛选）"""
+    # 权限控制：客户不能查看库存列表
+    if current_user.role == 'customer':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    
     query = db.query(Inventory)
     
     if agent_id:

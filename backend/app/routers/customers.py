@@ -22,6 +22,10 @@ async def list_customers(
     current_user = Depends(get_current_user)
 ):
     """获取客户列表（可选按代理商/销售筛选）"""
+    # 权限控制：客户不能查看客户列表
+    if current_user.role == 'customer':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
+    
     query = db.query(Customer)
     
     if agent_id:

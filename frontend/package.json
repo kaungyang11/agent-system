@@ -14,6 +14,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.16.0",
     "element-plus": "^2.13.7",
     "pinia": "^3.0.4",
